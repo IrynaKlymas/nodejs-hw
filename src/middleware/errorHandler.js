@@ -1,3 +1,5 @@
+// src/middleware/errorHandler.js
+
 import { HttpError } from 'http-errors';
 
 export const errorHandler = (err, req, res, next) => {
@@ -10,7 +12,6 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   const isProd = process.env.NODE_ENV === 'production';
-
 
   res.status(500).json({
     message: isProd
