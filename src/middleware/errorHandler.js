@@ -1,21 +1,15 @@
-// src/middleware/errorHandler.js
-
-import { HttpError } from 'http-errors';
+import { isHttpError } from 'http-errors';
 
 export const errorHandler = (err, req, res, next) => {
-  console.error('Error Midlware:', err);
+  req.log.error(err);
 
-  if (err instanceof HttpError) {
+  if (isHttpError(err)) {
     return res.status(err.status).json({
-      message: err.message || err.name,
+      message: err.message,
     });
   }
 
-  const isProd = process.env.NODE_ENV === 'production';
-
   res.status(500).json({
-    message: isProd
-      ? 'Something went wrong. Please try again later.'
-      : err.message,
+    message: 'Something went wrong',
   });
 };

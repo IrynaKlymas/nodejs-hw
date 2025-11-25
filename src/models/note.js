@@ -3,6 +3,11 @@ import { TAGS } from '../constants/tags.js';
 
 const noteSchema = new Schema(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'User',
+    },
     title: {
       type: String,
       required: true,
@@ -10,6 +15,7 @@ const noteSchema = new Schema(
     },
     content: {
       type: String,
+      required: false,
       trim: true,
       default: '',
     },
