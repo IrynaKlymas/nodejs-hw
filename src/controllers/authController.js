@@ -6,19 +6,28 @@ import bcrypt from 'bcrypt';
 
 export const registerUser = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return next(createHttpError(400, 'Email in use'));
     }
 
-    const user = await User.create(req.body);
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      ...req.body,
+      password: hashedPassword,
+    });
 
     const session = await createSession(user._id);
     setSessionCookies(res, session);
 
-    res.status(201).json(user); 
+    res.status(201).json({
+      _id: user._id,
+      email: user.email,
+      subscription: user.subscription,
+    });
   } catch (err) {
     next(err);
   }
@@ -39,10 +48,15 @@ export const loginUser = async (req, res, next) => {
     }
 
     await Session.deleteMany({ userId: user._id });
+
     const session = await createSession(user._id);
     setSessionCookies(res, session);
 
-    res.status(200).json(user);
+    res.status(200).json({
+      _id: user._id,
+      email: user.email,
+      subscription: user.subscription,
+    });
   } catch (err) {
     next(err);
   }
@@ -51,17 +65,22 @@ export const loginUser = async (req, res, next) => {
 export const refreshUserSession = async (req, res, next) => {
   try {
     const { refreshToken, sessionId } = req.cookies;
+
     const session = await Session.findOne({
       _id: sessionId,
       refreshToken,
     });
+
     if (!session) {
       return next(createHttpError(401, 'Session not found'));
     }
+
     if (new Date() > new Date(session.refreshTokenValidUntil)) {
       return next(createHttpError(401, 'Session token expired'));
     }
+
     await Session.findByIdAndDelete(sessionId);
+
     const newSession = await createSession(session.userId);
     setSessionCookies(res, newSession);
 
@@ -77,8 +96,8 @@ export const logoutUser = async (req, res, next) => {
 
     if (sessionId) {
       await Session.findByIdAndDelete(sessionId);
-      }
-      
+    }
+
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     res.clearCookie('sessionId');
