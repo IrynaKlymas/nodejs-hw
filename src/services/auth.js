@@ -1,45 +1,39 @@
-import { Session } from '../models/session.js';
-import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/time.js';
 import crypto from 'crypto';
+import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/time.js';
+import { Session } from '../models/session.js';
 
 export const createSession = async (userId) => {
+  const accessToken = crypto.randomBytes(30).toString('base64');
+  const refreshToken = crypto.randomBytes(30).toString('base64');
 
-  const accessToken = crypto.randomBytes(32).toString('base64');
-  const refreshToken = crypto.randomBytes(32).toString('base64');
-
-  const accessTokenValidUntil = new Date(Date.now() + FIFTEEN_MINUTES);
-  const refreshTokenValidUntil = new Date(Date.now() + ONE_DAY);
-
-  const session = await Session.create({
+  return Session.create({
     userId,
     accessToken,
     refreshToken,
-    accessTokenValidUntil,
-    refreshTokenValidUntil,
+    accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
+    refreshTokenValidUntil: new Date(Date.now() + ONE_DAY),
   });
-
-  return session;
 };
 
 export const setSessionCookies = (res, session) => {
-  const cookieOptions = {
-    httpOnly: true, 
-    secure: true, 
-    sameSite: 'none', 
-  };
-
   res.cookie('accessToken', session.accessToken, {
-    ...cookieOptions,
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
     maxAge: FIFTEEN_MINUTES,
   });
 
   res.cookie('refreshToken', session.refreshToken, {
-    ...cookieOptions,
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
     maxAge: ONE_DAY,
   });
 
   res.cookie('sessionId', session._id, {
-    ...cookieOptions,
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
     maxAge: ONE_DAY,
   });
 };
